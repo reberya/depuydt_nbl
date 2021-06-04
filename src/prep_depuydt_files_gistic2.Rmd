@@ -1,0 +1,72 @@
+---
+title: "prep_depuydt_files_gistic2"
+author: "Ryan Rebernick"
+date: "6/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+```{r}
+
+#install.packages(c('dplyr', 'magrittr', 'data.table'))
+
+library(data.table)
+library(dplyr)
+library(magrittr)
+
+```
+
+
+# Prepare segmentation file
+Instead of chrX/Y labels as chr23. For all samples the chr23 shows up as having 0 markers. This chromosome is excluded from the segment file.
+```{r}
+
+seg <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table3_segmented_copy_number_data.txt') %>%
+  mutate(numMarkers = -1)
+
+# loop through matrix files 
+dir <- '/mctp/share/users/rebernrj/projects/depuydt_nbl/data/GEO/GSE103123/GSE103123_processed_matrix_tables/'
+files <- list.files(path = dir, full.names = T)
+
+for(f in files){
+  # get current matrix and samples contained in the matrix
+  print(f)
+  mat <- fread(f)
+  ## ensure proper formatting of chr
+  mat$chr <- gsub('chr', '', mat$chr)
+  ## remove values that do not correspond to sample numbers
+  samples <- as.numeric(colnames(mat))
+  samples <- as.character(samples[!is.na(samples)])
+  
+  for(s in samples){
+    # hold for current segment
+    curSeg <- seg[Name ==s,]
+    for(x in 1:length(curSeg$Name)){
+      # assign number of markers
+      curMat <- mat %>% dplyr::filter(chr == curSeg$chromosome[x], position <= curSeg$max[x], position >= curSeg$min[x])
+      curSeg$numMarkers[x] <- length(curMat$position)
+    }
+    # reassign to segment file
+    seg[Name ==s] <- curSeg
+  }
+  
+}
+
+# Exclude chr23
+seg %<>% 
+  dplyr::select(Name, chromosome, min, max, numMarkers, logratio) %>%
+  dplyr::filter(chromosome != 'chr23')
+colnames(seg) <- c('sample', 'chromosome', 'start', 'end', 'numMarkers', 'logRatio')
+
+# save 
+write.table(seg, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_seg_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+
+
+
+
+```
+
