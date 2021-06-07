@@ -115,7 +115,7 @@ for(x in 3:length(files)){
 f <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table1_sample_metadata.txt') %>%
   dplyr::select(Number) %>%
   set_colnames('array')
-write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_all_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+#write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_all_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
 
 
 # 'Cases' - those that die w/in 1.5 years
@@ -123,14 +123,28 @@ f <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table1
   dplyr::filter(Class == 'case') %>%
   dplyr::select(Number) %>%
   set_colnames('array')
-write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_cases_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+#write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_cases_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
 
 # 'Controls' - those that survive at least 5 years follow up
 f <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table1_sample_metadata.txt') %>%
   dplyr::filter(Class == 'control') %>%
   dplyr::select(Number) %>%
   set_colnames('array')
-write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_controls_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+#write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_controls_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+
+# Non-MYCN amplified
+f <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table1_sample_metadata.txt') %>%
+  dplyr::filter(MYCN == 0) %>%
+  dplyr::select(Number) %>%
+  set_colnames('array')
+write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_MYCN0_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
+
+# MYCN amplified
+f <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/data/figshare/table1_sample_metadata.txt') %>%
+  dplyr::filter(MYCN == 1) %>%
+  dplyr::select(Number) %>%
+  set_colnames('array')
+write.table(f, paste0('/mctp/share/users/rebernrj/projects/depuydt_nbl/int/gistic2/depuydt_array_list_MYCN1_', format(Sys.time(), "%Y-%m-%d"), '.txt'), row.names = F, col.names = T, sep = '\t', quote = F)
 
 ```
 
