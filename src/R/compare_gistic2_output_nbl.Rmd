@@ -1,0 +1,139 @@
+---
+title: "compare_gistic2_output_nbl"
+author: "Ryan Rebernick"
+date: "6/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Description:
+
+
+
+# Load packages
+```{r, message=F}
+
+library(dplyr)
+library(magrittr)
+library(data.table)
+library(tidyr)
+library(GenomicRanges)
+
+```
+
+
+
+# Load data
+
+## nbl cohort gistic
+```{r}
+
+ours <- fread('/mctp/share/users/rebernrj/projects/nbl/data/gistic2/all_lesions.conf_99.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+ours <- ours[,c(1,2,7)]
+ours %<>% set_colnames(c('name', 'region', 'residual_q')) 
+ours$name.region = paste0(vapply(strsplit(ours$name," "), `[`, 1, FUN.VALUE=character(1)), '.', ours$region)
+ours$group <- 'our_nbl_cohort'
+
+```
+
+## depudyt (MYCN = 0)
+```{r}
+
+mycn0 <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/out/gistic2/MYCN0/all_lesions.conf_90.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+mycn0 <- mycn0[,c(1,2,7)]
+mycn0 %<>% set_colnames(c('name', 'region', 'residual_q')) 
+mycn0$name.region = paste0(vapply(strsplit(mycn0$name," "), `[`, 1, FUN.VALUE=character(1)), '.', mycn0$region)
+mycn0$group <- 'dep_mycn0'
+
+```
+
+## depudyt (MYCN = 1)
+```{r}
+
+mycn1 <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/out/gistic2/MYCN1/all_lesions.conf_90.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+mycn1 <- mycn1[,c(1,2,7)]
+mycn1 %<>% set_colnames(c('name', 'region', 'residual_q')) 
+mycn1$name.region = paste0(vapply(strsplit(mycn1$name," "), `[`, 1, FUN.VALUE=character(1)), '.', mycn1$region)
+mycn1$group <- 'dep_mycn1'
+
+```
+
+## depudyt cases (case = patients that die within 1.5 years)
+```{r}
+
+cases <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/out/gistic2/cases/all_lesions.conf_90.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+cases <- cases[,c(1,2,7)]
+cases %<>% set_colnames(c('name', 'region', 'residual_q')) 
+cases$name.region = paste0(vapply(strsplit(cases$name," "), `[`, 1, FUN.VALUE=character(1)), '.', cases$region)
+cases$group <- 'dep_cases'
+
+```
+
+## depudyt controls (controls = patients that survive with at least 5 years follow up)
+```{r}
+
+controls <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/out/gistic2/controls/all_lesions.conf_90.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+controls <- controls[,c(1,2,7)]
+controls %<>% set_colnames(c('name', 'region', 'residual_q')) 
+controls$name.region = paste0(vapply(strsplit(controls$name," "), `[`, 1, FUN.VALUE=character(1)), '.', controls$region)
+controls$group <- 'dep_controls'
+
+```
+
+## depudyt all (including other)
+case = patients that die within 1.5 years
+controls = patients that survive with at least 5 years follow up
+other = not meeting either criterion
+https://figshare.com/collections/Meta-mining_of_copy_number_profiles_of_high-risk_neuroblastoma_tumors/4169864
+```{r}
+
+depudyt_all <- fread('/mctp/share/users/rebernrj/projects/depuydt_nbl/out/gistic2/all/all_lesions.conf_90.txt', data.table = F) %>%
+  dplyr::filter(`Amplitude Threshold` != 'Actual Copy Change Given') %>%
+  dplyr::filter(`Residual q values after removing segments shared with higher peaks` < 0.05)
+depudyt_all <- depudyt_all[,c(1,2,7)]
+depudyt_all %<>% set_colnames(c('name', 'region', 'residual_q')) 
+depudyt_all$name.region = paste0(vapply(strsplit(depudyt_all$name," "), `[`, 1, FUN.VALUE=character(1)), '.', depudyt_all$region)
+depudyt_all$group <- 'dep_all'
+
+```
+
+
+
+# Look for regions in common b/t cohorts
+
+## Regions common to all groups 
+```{r}
+
+merged <- rbind(cases,controls,depudyt_all,mycn0, mycn1, ours) %>%
+  dplyr::mutate(value = 1) %>%
+  dplyr::select(-name, -residual_q, -region) %>%
+  unique() %>%
+  spread(., group, value = value, fill =0) %>%
+  rowwise() %>%
+  dplyr::mutate(total = sum(c_across(dep_all:our_nbl_cohort)))
+
+
+```
+
+
+
+```{r}
+
+temp <- fread('/mctp/share/users/rebernrj/projects/nbl/data/clinical/nbl.clinical.cogmeet.20210525.tsv') %>%
+  dplyr::filter(uf.cured == 'yes')
+
+```
+
